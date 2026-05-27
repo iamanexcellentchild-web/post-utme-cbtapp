@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="exam-details">
+    <div class="exam-info">
+        <h2>{{ exam.title }}</h2>
+        <p class="subject">{{ exam.subject }}</p>
+        <p>{{ exam.description }}</p>
+    </div>
+
+    <div class="exam-stats">
+        <div class="stat">
+            <span class="label">Duration:</span>
+            <span class="value">{{ exam.duration_minutes }} minutes</span>
+        </div>
+        <div class="stat">
+            <span class="label">Questions:</span>
+            <span class="value">{{ exam.total_questions }}</span>
+        </div>
+        <div class="stat">
+            <span class="label">Passing Score:</span>
+            <span class="value">{{ exam.passing_score }}%</span>
+        </div>
+    </div>
+
+    <div class="exam-actions">
+        <a href="{{ url_for('exam.start_exam', exam_id=exam.id) }}" class="btn btn-primary">Start New Attempt</a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    {% if user_results %}
+    <h3>Your Previous Attempts</h3>
+    <div class="results-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                    <th>Time Taken</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in user_results %}
+                <tr>
+                    <td>{{ result.completed_at.strftime('%d/%m/%Y %H:%M') if result.completed_at else 'In Progress' }}</td>
+                    <td>{{ result.total_score }}</td>
+                    <td>
+                        <span class="percentage">{{ "%.1f"|format(result.percentage) }}%</span>
+                    </td>
+                    <td>
+                        <span class="status {% if result.is_passed %}passed{% else %}failed{% endif %}">
+                            {% if result.is_passed %}Passed{% else %}Failed{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if result.time_taken_seconds %}
+                            {{ (result.time_taken_seconds // 60) }}m {{ (result.time_taken_seconds % 60) }}s
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('exam.view_result', exam_id=exam.id, result_id=result.id) }}" class="btn-small">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

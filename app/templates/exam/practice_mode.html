@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Mode - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h2 class="mb-0">📚 Practice Mode - Topic-Based Learning</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success" role="alert">
+                        <strong>✨ This is PRACTICE mode (Not Graded):</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Choose a subject and topic</li>
+                            <li>No time limit</li>
+                            <li>Unlimited attempts</li>
+                            <li>Focus on learning and improvement</li>
+                            <li>Results are for your reference only</li>
+                        </ul>
+                    </div>
+
+                    <!-- Subject Selection -->
+                    <h5 class="mt-4 mb-3">📖 Select a Subject:</h5>
+                    <div class="row mb-4">
+                        {% for subject in subjects %}
+                        <div class="col-md-4 mb-3">
+                            <button class="btn btn-outline-primary btn-lg w-100 subject-btn" data-subject="{{ subject }}">
+                                {% if subject == 'Mathematics' %}
+                                    🔢 Mathematics
+                                {% elif subject == 'English' %}
+                                    📝 English Language
+                                {% else %}
+                                    🌍 General Paper
+                                {% endif %}
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Topic Selection -->
+                    <div id="topicSelection" style="display: none;">
+                        <h5 class="mb-3">
+                            📌 Select a Topic from <strong id="selectedSubject"></strong>:
+                        </h5>
+                        <div id="topicsContainer" class="row mb-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.subject-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const subject = this.getAttribute('data-subject');
+            document.getElementById('selectedSubject').textContent = subject;
+            
+            // Fetch topics for this subject
+            fetch(`{{ url_for('exam.practice_mode_subjects') }}?subject=${subject}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('topicsContainer');
+                    container.innerHTML = data.topics.map(topic => `
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">${topic.name}</h6>
+                                    <p class="card-text text-muted small">${topic.description || 'Practice this topic'}</p>
+                                    <button class="btn btn-sm btn-success w-100 start-practice-btn" data-topic-id="${topic.id}">
+                                        Start Practice
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Add event listeners to practice buttons
+                    document.querySelectorAll('.start-practice-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const topicId = this.getAttribute('data-topic-id');
+                            startPractice(topicId);
+                        });
+                    });
+                    
+                    document.getElementById('topicSelection').style.display = 'block';
+                });
+        });
+    });
+
+    function startPractice(topicId) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Loading...';
+
+        fetch(`{{ url_for('exam.practice_mode_start', topic_id=0) }}`.replace('/0', `/${topicId}`), {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert('Error: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = 'Start Practice';
+            }
+        });
+    }
+</script>
+
+<style>
+    .subject-btn {
+        border-width: 2px;
+        font-size: 1.1em;
+        padding: 15px;
+    }
+    .subject-btn:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}

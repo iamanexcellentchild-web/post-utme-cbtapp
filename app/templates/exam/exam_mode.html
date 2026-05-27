@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Exam Mode - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">📋 Full Exam Mode</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <strong>⏰ This is a GRADED exam with real test conditions:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>40 Questions (mixed subjects)</li>
+                            <li>30 Minutes Time Limit</li>
+                            <li>Subjects: Mathematics, English, General Paper</li>
+                            <li>Graded out of 30 marks (passing score)</li>
+                            <li>Results will be saved to leaderboard</li>
+                        </ul>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4>40</h4>
+                                <p class="text-muted">Questions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4>30</h4>
+                                <p class="text-muted">Minutes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <h4>30/40</h4>
+                                <p class="text-muted">Pass Mark</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light mt-4">
+                        <div class="card-body">
+                            <h5>📝 Exam Information:</h5>
+                            <ul>
+                                <li>This exam simulates the actual UNILAG Post-UTME examination</li>
+                                <li>You will see questions from Mathematics, English, and General Paper</li>
+                                <li>Each correct answer is worth 1 mark</li>
+                                <li>You must score 30 or more marks to pass</li>
+                                <li>Your score will appear on the leaderboard</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button class="btn btn-lg btn-success w-100" id="startBtn">
+                            🚀 Start Exam Now
+                        </button>
+                    </div>
+
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-link w-100 mt-2">← Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('startBtn').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Starting...';
+
+        fetch('{{ url_for("exam.exam_mode_start") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert('Error starting exam: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Start Exam Now';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to start exam');
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Start Exam Now';
+        });
+    });
+</script>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    .card-header {
+        border-radius: 10px 10px 0 0;
+    }
+</style>
+{% endblock %}

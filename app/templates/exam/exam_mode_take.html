@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Taking Exam - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📋 Full Exam Mode - Question {{ result.answers|length + 1 }} of 40</h5>
+                    <div class="timer text-center" id="timer" style="font-size: 1.2em; font-weight: bold;">
+                        <span id="timeLeft">30:00</span>
+                    </div>
+                </div>
+                <div class="card-body" id="examContent">
+                    <div id="questionsContainer">
+                        {% for question in questions %}
+                        <div class="question-card" id="q-{{ question.id }}" style="display: none;">
+                            <h5 class="mb-3">{{ loop.index }}. {{ question.question_text }}</h5>
+                            <div class="options">
+                                {% for option_letter, option_text in [
+                                    ('A', question.option_a),
+                                    ('B', question.option_b),
+                                    ('C', question.option_c),
+                                    ('D', question.option_d)
+                                ] %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input option-input" type="radio" 
+                                        name="option_{{ question.id }}" id="opt_{{ question.id }}_{{ option_letter }}"
+                                        value="{{ option_letter }}" data-question-id="{{ question.id }}">
+                                    <label class="form-check-label" for="opt_{{ question.id }}_{{ option_letter }}">
+                                        <strong>{{ option_letter }}.</strong> {{ option_text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if question.explanation %}
+                            <div class="alert alert-light mt-3">
+                                <small><strong>💡 Explanation:</strong> {{ question.explanation }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-secondary" id="prevBtn" disabled>← Previous</button>
+                        <span id="questionNumber">Question 1 of 40</span>
+                        <button class="btn btn-secondary" id="nextBtn">Next →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Questions Summary</h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    <div id="questionsSummary"></div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-danger w-100" id="finishBtn">🏁 Finish Exam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const resultId = {{ result.id }};
+    const questions = {{ questions|tojson }};
+    let currentQuestionIndex = 0;
+    const startTime = new Date();
+    const timeLimit = 30 * 60 * 1000; // 30 minutes
+    const answers = {};
+
+    function showQuestion(index) {
+        // Hide all questions
+        document.querySelectorAll('.question-card').forEach(el => el.style.display = 'none');
+        
+        // Show current question
+        const question = questions[index];
+        document.getElementById(`q-${question.id}`).style.display = 'block';
+        
+        // Update buttons
+        document.getElementById('prevBtn').disabled = index === 0;
+        document.getElementById('nextBtn').disabled = index === questions.length - 1;
+        document.getElementById('questionNumber').textContent = `Question ${index + 1} of ${questions.length}`;
+        
+        // Restore previous answer if it exists
+        if (answers[question.id]) {
+            document.getElementById(`opt_${question.id}_${answers[question.id]}`).checked = true;
+        }
+    }
+
+    function updateSummary() {
+        const summary = document.getElementById('questionsSummary');
+        summary.innerHTML = questions.map((q, i) => {
+            const answered = answers[q.id] ? '✓' : '○';
+            const btnClass = answers[q.id] ? 'btn-success' : 'btn-outline-secondary';
+            return `<button class="btn ${btnClass} btn-sm w-100 mb-2" data-index="${i}">${answered} Q${i+1}</button>`;
+        }).join('');
+        
+        // Add click handlers
+        document.querySelectorAll('#questionsSummary button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentQuestionIndex = parseInt(btn.getAttribute('data-index'));
+                showQuestion(currentQuestionIndex);
+            });
+        });
+    }
+
+    function submitAnswer(answer) {
+        const question = questions[currentQuestionIndex];
+        answers[question.id] = answer;
+        
+        fetch(`/api/exam-mode/${resultId}/submit-answer`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                question_id: question.id,
+                answer: answer
+            })
+        }).catch(error => console.error('Error:', error));
+        
+        updateSummary();
+    }
+
+    function updateTimer() {
+        const elapsed = new Date() - startTime;
+        const remaining = timeLimit - elapsed;
+        
+        if (remaining <= 0) {
+            finishExam();
+            return;
+        }
+        
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        document.getElementById('timeLeft').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (remaining < 60000) {
+            document.getElementById('timer').classList.add('text-danger');
+        }
+    }
+
+    function finishExam() {
+        if (!confirm('Are you sure you want to finish the exam?')) return;
+        
+        fetch(`/api/exam-mode/${resultId}/finish`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            }
+        });
+    }
+
+    // Event listeners
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            showQuestion(currentQuestionIndex);
+        }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            showQuestion(currentQuestionIndex);
+        }
+    });
+
+    document.getElementById('finishBtn').addEventListener('click', finishExam);
+
+    document.querySelectorAll('.option-input').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            submitAnswer(e.target.value);
+        });
+    });
+
+    // Initialize
+    showQuestion(0);
+    updateSummary();
+    setInterval(updateTimer, 1000);
+    updateTimer();
+</script>
+
+<style>
+    .question-card { padding: 20px; }
+    .options { margin: 20px 0; }
+    .form-check-label { cursor: pointer; margin-left: 10px; }
+    #timer { background-color: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; }
+</style>
+{% endblock %}

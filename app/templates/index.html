@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}UNILAG CBT Practice - Home{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h1>Welcome to UNILAG CBT Practice</h1>
+        <p>Master your Post-UTME examinations with our comprehensive practice platform</p>
+        {% if not current_user.is_authenticated %}
+            <div class="hero-buttons">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Get Started</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">Login</a>
+            </div>
+        {% else %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="features">
+    <h2>Why Choose Us?</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">📖</div>
+            <h3>Comprehensive Content</h3>
+            <p>Access practice questions from all UNILAG subjects and topics</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⏱️</div>
+            <h3>Timed Exams</h3>
+            <p>Practice under real exam conditions with time limits</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Detailed Analytics</h3>
+            <p>Track your progress and identify areas for improvement</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <h3>Instant Feedback</h3>
+            <p>Get immediate feedback with detailed explanations</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

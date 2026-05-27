@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}About - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="about-container">
+    <h2>About UNILAG CBT Practice</h2>
+    
+    <div class="about-content">
+        <h3>Our Mission</h3>
+        <p>UNILAG CBT Practice is designed to help students prepare effectively for the University of Lagos Post-UTME Computer Based Tests. We provide a comprehensive platform for students to practice, learn, and excel in their examinations.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li>📚 Comprehensive question bank covering all UNILAG subjects</li>
+            <li>⏱️ Realistic timed exams matching actual exam conditions</li>
+            <li>📊 Detailed analytics and performance tracking</li>
+            <li>✅ Instant feedback with explanations</li>
+            <li>🎯 Performance history and progress monitoring</li>
+            <li>💡 Expert-curated content</li>
+        </ul>
+
+        <h3>How It Works</h3>
+        <ol>
+            <li>Create your account</li>
+            <li>Browse available exams</li>
+            <li>Take practice tests under timed conditions</li>
+            <li>Review detailed results and explanations</li>
+            <li>Track your progress over time</li>
+            <li>Master the concepts and ace your exams</li>
+        </ol>
+
+        <h3>Contact Support</h3>
+        <p>Have questions? Need help? Visit our <a href="{{ url_for('main.contact') }}">contact page</a> to reach our support team.</p>
+    </div>
+</div>
+{% endblock %}

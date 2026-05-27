@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ current_user.full_name or current_user.username }}!</h1>
+        <p>Your CBT Practice Dashboard</p>
+    </div>
+
+    <div class="statistics">
+        <div class="stat-card">
+            <h3>{{ total_tests }}</h3>
+            <p>Tests Taken</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ passed_tests }}</h3>
+            <p>Tests Passed</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ "%.1f"|format(avg_score) }}%</h3>
+            <p>Average Score</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ exams|length }}</h3>
+            <p>Available Exams</p>
+        </div>
+    </div>
+
+    <!-- NEW FEATURES SECTION -->
+    <h2 style="margin-top: 40px;">🎯 New Features</h2>
+    <div class="exams-grid" style="margin-bottom: 30px;">
+        <!-- Exam Mode -->
+        <div class="exam-card" style="border-left: 4px solid #dc3545;">
+            <div class="exam-header">
+                <h3>📋 Full Exam Mode</h3>
+                <span class="subject-badge" style="background-color: #dc3545;">GRADED</span>
+            </div>
+            <p class="exam-description">Take a realistic 40-question exam with a 30-minute time limit. Test your knowledge and compete on the leaderboard!</p>
+            <div class="exam-details">
+                <span>⏱️ 30 minutes</span>
+                <span>❓ 40 questions</span>
+                <span>📊 Graded</span>
+            </div>
+            <div class="exam-actions">
+                <a href="{{ url_for('exam.exam_mode_home') }}" class="btn btn-danger">Start Exam</a>
+            </div>
+        </div>
+
+        <!-- Practice Mode -->
+        <div class="exam-card" style="border-left: 4px solid #28a745;">
+            <div class="exam-header">
+                <h3>📚 Practice Mode</h3>
+                <span class="subject-badge" style="background-color: #28a745;">NO TIME LIMIT</span>
+            </div>
+            <p class="exam-description">Learn topic by topic! Practice specific subjects without time pressure. Perfect for targeted studying and improvement.</p>
+            <div class="exam-details">
+                <span>⏱️ Unlimited time</span>
+                <span>📌 Topic-based</span>
+                <span>💡 Learning-focused</span>
+            </div>
+            <div class="exam-actions">
+                <a href="{{ url_for('exam.practice_mode_home') }}" class="btn btn-success">Start Practicing</a>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="exam-card" style="border-left: 4px solid #ffc107;">
+            <div class="exam-header">
+                <h3>🏆 Leaderboard</h3>
+                <span class="subject-badge" style="background-color: #ffc107; color: #000;">TOP 50</span>
+            </div>
+            <p class="exam-description">See how you rank against other users. Check the top performers and get inspired to improve your scores!</p>
+            <div class="exam-details">
+                <span>👥 Global rankings</span>
+                <span>📈 Performance stats</span>
+                <span>🎖️ Achievements</span>
+            </div>
+            <div class="exam-actions">
+                <a href="{{ url_for('exam.leaderboard') }}" class="btn btn-warning">View Rankings</a>
+            </div>
+        </div>
+    </div>
+
+    <h2>Available Exams</h2>
+    <div class="exams-grid">
+        {% for exam in exams %}
+        <div class="exam-card">
+            <div class="exam-header">
+                <h3>{{ exam.title }}</h3>
+                <span class="subject-badge">{{ exam.subject }}</span>
+            </div>
+            <p class="exam-description">{{ exam.description }}</p>
+            <div class="exam-details">
+                <span>⏱️ {{ exam.duration_minutes }} mins</span>
+                <span>❓ {{ exam.total_questions }} questions</span>
+            </div>
+            <div class="exam-actions">
+                <a href="{{ url_for('exam.view_exam', exam_id=exam.id) }}" class="btn btn-secondary">View Details</a>
+                <a href="{{ url_for('exam.start_exam', exam_id=exam.id) }}" class="btn btn-primary">Start Exam</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2>Recent Results</h2>
+    {% if user_results %}
+    <div class="results-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Exam</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in user_results[-5:] %}
+                <tr>
+                    <td>{{ result.exam.title }}</td>
+                    <td>{{ result.completed_at.strftime('%d/%m/%Y') if result.completed_at else 'In Progress' }}</td>
+                    <td>{{ result.total_score }}/{{ result.total_marks }}</td>
+                    <td>
+                        <span class="percentage">{{ "%.1f"|format(result.percentage) }}%</span>
+                    </td>
+                    <td>
+                        <span class="status {% if result.is_passed %}passed{% else %}failed{% endif %}">
+                            {% if result.is_passed %}Passed{% else %}Failed{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('exam.view_result', exam_id=result.exam_id, result_id=result.id) }}" class="btn-small">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="no-results">No exam results yet. Start practicing to see your results here!</p>
+    {% endif %}
+</div>
+{% endblock %}

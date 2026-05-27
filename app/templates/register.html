@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Register - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>Create Your Account</h2>
+        
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="department">Department (Optional)</label>
+                <input type="text" id="department" name="department" placeholder="e.g., Medicine, Engineering">
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="password">Password</label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="suggestPassword()" style="padding: 4px 12px; font-size: 12px;">💡 Suggest Password</button>
+                </div>
+                <input type="password" id="password" name="password" required>
+                <div id="password-strength" style="margin-top: 6px; font-size: 12px;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+
+        <p class="auth-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+    </div>
+</div>
+
+<script>
+function generatePassword(length = 14) {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*_+-=';
+    const allChars = uppercase + lowercase + numbers + symbols;
+    
+    let password = '';
+    // Ensure at least one of each type
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    // Shuffle password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+function checkPasswordStrength(password) {
+    let strength = 0;
+    let feedback = '';
+    
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[!@#$%^&*_+\-=]/.test(password)) strength++;
+    
+    if (strength < 2) {
+        feedback = '<span style="color: #dc3545;">❌ Weak password</span>';
+    } else if (strength < 4) {
+        feedback = '<span style="color: #ffc107;">⚠️ Fair password</span>';
+    } else if (strength < 5) {
+        feedback = '<span style="color: #20c997;">✓ Good password</span>';
+    } else {
+        feedback = '<span style="color: #28a745;">✅ Strong password</span>';
+    }
+    
+    return feedback;
+}
+
+function suggestPassword() {
+    const password = generatePassword();
+    document.getElementById('password').value = password;
+    document.getElementById('confirm_password').value = password;
+    
+    // Show strength indicator
+    const strengthDiv = document.getElementById('password-strength');
+    strengthDiv.innerHTML = checkPasswordStrength(password);
+    
+    // Show toast notification
+    showToast('Password suggested! Both fields are auto-filled.');
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 12px 20px; border-radius: 4px; z-index: 9999; animation: slideIn 0.3s ease-in-out;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in-out';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Add event listener to password field for real-time strength checking
+document.getElementById('password').addEventListener('input', function() {
+    if (this.value.length > 0) {
+        document.getElementById('password-strength').innerHTML = checkPasswordStrength(this.value);
+    } else {
+        document.getElementById('password-strength').innerHTML = '';
+    }
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+    .btn-outline-primary {
+        color: #0d6efd;
+        border: 1px solid #0d6efd;
+        background: white;
+    }
+    .btn-outline-primary:hover {
+        background: #0d6efd;
+        color: white;
+    }
+    .btn-sm {
+        font-size: 12px;
+        padding: 4px 12px;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

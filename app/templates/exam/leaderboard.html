@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Leaderboard Header -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h2 class="mb-0">🏆 Global Leaderboard</h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        Top performers in the <strong>Full Exam Mode</strong> (40 questions, 30 minutes)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top 3 Podium -->
+            <div class="row mb-4">
+                {% set medals = ['🥇', '🥈', '🥉'] %}
+                {% for result in top_results[:3] %}
+                <div class="col-md-4 mb-2">
+                    <div class="card text-center shadow">
+                        <div class="card-body">
+                            <div class="medal" style="font-size: 3em; margin-bottom: 10px;">
+                                {{ medals[loop.index0] }}
+                            </div>
+                            <h5 class="card-title">{{ result.user.username }}</h5>
+                            <p class="text-muted">{{ result.user.full_name or 'N/A' }}</p>
+                            
+                            <div class="score-display">
+                                <h4 class="text-primary">{{ result.total_score }}/40</h4>
+                                <p class="text-muted">{{ result.percentage|round(1) }}%</p>
+                            </div>
+                            
+                            <small class="text-muted d-block mt-2">
+                                ⏱️ {{ (result.time_taken_seconds / 60)|int }} min {{ (result.time_taken_seconds % 60)|int }} sec
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Full Leaderboard Table -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📊 Top 50 Scores</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Rank</th>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Time Taken</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in top_results %}
+                            <tr {% if result.user_id == current_user.id %}class="table-info"{% endif %}>
+                                <td>
+                                    <strong>
+                                        {% if loop.index <= 3 %}
+                                            {{ ['🥇', '🥈', '🥉'][loop.index0] }}
+                                        {% else %}
+                                            #{{ loop.index }}
+                                        {% endif %}
+                                    </strong>
+                                </td>
+                                <td>
+                                    <strong>{{ result.user.username }}</strong>
+                                    {% if result.user_id == current_user.id %}
+                                        <span class="badge badge-primary">YOU</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ result.user.full_name or '—' }}</td>
+                                <td>
+                                    <span class="badge badge-success">{{ result.total_score }}/40</span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="width: 100px; height: 20px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                            style="width: {{ result.percentage }}%;" 
+                                            aria-valuenow="{{ result.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ result.percentage|round(0) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    ⏱️ {{ (result.time_taken_seconds / 60)|int }}:{{ (result.time_taken_seconds % 60)|int|string|rjust(2, '0') }}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ result.completed_at.strftime('%Y-%m-%d %H:%M') if result.completed_at else '—' }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Your Stats (if applicable) -->
+            {% if current_user.results %}
+            {% set user_full_exams = current_user.results|selectattr('exam_mode', 'equalto', 'full_exam')|selectattr('is_graded', 'equalto', True)|list %}
+            {% if user_full_exams %}
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📈 Your Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ user_full_exams|length }}</h4>
+                            <p class="text-muted">Exams Taken</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">
+                                {{ (user_full_exams|selectattr('is_passed')|list|length) }}
+                            </h4>
+                            <p class="text-muted">Exams Passed</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ (user_full_exams|map(attribute='total_score')|sum / user_full_exams|length)|round(1) }}</h4>
+                            <p class="text-muted">Average Score</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ (user_full_exams|map(attribute='percentage')|sum / user_full_exams|length)|round(1) }}%</h4>
+                            <p class="text-muted">Average %</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4 mb-4">
+                <a href="{{ url_for('exam.exam_mode_home') }}" class="btn btn-lg btn-primary">
+                    📋 Challenge the Leaderboard
+                </a>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-lg btn-secondary">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Results - {{ exam.title }} - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="result-header">
+        <h2>{{ exam.title }} - Results</h2>
+        <p class="exam-date">{{ result.completed_at.strftime('%d %B %Y at %H:%M') }}</p>
+    </div>
+
+    <div class="result-score">
+        <div class="score-display">
+            <h1>{{ "%.1f"|format(result.percentage) }}%</h1>
+            <p>Your Score</p>
+        </div>
+        <div class="score-detail">
+            <p><strong>Points:</strong> {{ result.total_score }} / {{ total_marks }}</p>
+            <p><strong>Status:</strong> 
+                <span class="status {% if result.is_passed %}passed{% else %}failed{% endif %}">
+                    {% if result.is_passed %}✓ PASSED{% else %}✗ FAILED{% endif %}
+                </span>
+            </p>
+            <p><strong>Time Taken:</strong> 
+                {% set minutes = result.time_taken_seconds // 60 %}
+                {% set seconds = result.time_taken_seconds % 60 %}
+                {{ minutes }}m {{ seconds }}s
+            </p>
+            <p><strong>Passing Score:</strong> {{ exam.passing_score }}%</p>
+        </div>
+    </div>
+
+    <div class="detailed-results">
+        <h3>Detailed Analysis</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Your Answer</th>
+                    <th>Correct Answer</th>
+                    <th>Status</th>
+                    <th>Explanation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for answer in answers %}
+                <tr class="{% if answer.is_correct %}correct{% else %}incorrect{% endif %}">
+                    <td>Q{{ loop.index }}: {{ answer.question.question_text[:50] }}...</td>
+                    <td class="user-answer">{{ answer.user_answer or 'Not answered' }}</td>
+                    <td class="correct-answer">{{ answer.question.correct_answer }}</td>
+                    <td>
+                        {% if answer.is_correct %}
+                        <span class="result-badge correct">✓ Correct</span>
+                        {% else %}
+                        <span class="result-badge incorrect">✗ Incorrect</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if answer.question.explanation %}
+                        <details>
+                            <summary>View</summary>
+                            <p>{{ answer.question.explanation }}</p>
+                        </details>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="result-actions">
+        <a href="{{ url_for('exam.start_exam', exam_id=exam.id) }}" class="btn btn-primary">Take Exam Again</a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

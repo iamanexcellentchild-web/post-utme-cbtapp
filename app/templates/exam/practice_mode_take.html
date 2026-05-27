@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Session - UNILAG CBT{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📚 {{ result.selected_topic.name }} - Question {{ result.answers|length + 1 }} of {{ questions|length }}</h5>
+                    <small>Practice Mode (No Time Limit)</small>
+                </div>
+                <div class="card-body" id="practiceContent">
+                    <div id="questionsContainer">
+                        {% for question in questions %}
+                        <div class="question-card" id="q-{{ question.id }}" style="display: none;">
+                            <h5 class="mb-3">{{ loop.index }}. {{ question.question_text }}</h5>
+                            <div class="options">
+                                {% for option_letter, option_text in [
+                                    ('A', question.option_a),
+                                    ('B', question.option_b),
+                                    ('C', question.option_c),
+                                    ('D', question.option_d)
+                                ] %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input option-input" type="radio" 
+                                        name="option_{{ question.id }}" id="opt_{{ question.id }}_{{ option_letter }}"
+                                        value="{{ option_letter }}" data-question-id="{{ question.id }}">
+                                    <label class="form-check-label" for="opt_{{ question.id }}_{{ option_letter }}">
+                                        <strong>{{ option_letter }}.</strong> {{ option_text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-secondary" id="prevBtn" disabled>← Previous</button>
+                        <span id="questionNumber">Question 1 of {{ questions|length }}</span>
+                        <button class="btn btn-secondary" id="nextBtn">Next →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Questions Summary</h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    <div id="questionsSummary"></div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-success w-100" id="finishBtn">✓ Done With This Topic</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const resultId = {{ result.id }};
+    const questions = {{ questions|tojson }};
+    let currentQuestionIndex = 0;
+    const answers = {};
+
+    function showQuestion(index) {
+        document.querySelectorAll('.question-card').forEach(el => el.style.display = 'none');
+        const question = questions[index];
+        document.getElementById(`q-${question.id}`).style.display = 'block';
+        
+        document.getElementById('prevBtn').disabled = index === 0;
+        document.getElementById('nextBtn').disabled = index === questions.length - 1;
+        document.getElementById('questionNumber').textContent = `Question ${index + 1} of ${questions.length}`;
+        
+        if (answers[question.id]) {
+            document.getElementById(`opt_${question.id}_${answers[question.id]}`).checked = true;
+            showExplanation(question.id);
+        }
+    }
+
+    function updateSummary() {
+        const summary = document.getElementById('questionsSummary');
+        summary.innerHTML = questions.map((q, i) => {
+            const answered = answers[q.id] ? '✓' : '○';
+            const btnClass = answers[q.id] ? 'btn-success' : 'btn-outline-secondary';
+            return `<button class="btn ${btnClass} btn-sm w-100 mb-2" data-index="${i}">${answered} Q${i+1}</button>`;
+        }).join('');
+        
+        document.querySelectorAll('#questionsSummary button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentQuestionIndex = parseInt(btn.getAttribute('data-index'));
+                showQuestion(currentQuestionIndex);
+            });
+        });
+    }
+
+    function submitAnswer(answer) {
+        const question = questions[currentQuestionIndex];
+        answers[question.id] = answer;
+        
+        fetch(`/api/practice-mode/${resultId}/submit-answer`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                question_id: question.id,
+                answer: answer
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showExplanation(question.id, data);
+            }
+        });
+        
+        updateSummary();
+    }
+
+    function showExplanation(questionId, data) {
+        const question = questions.find(q => q.id === questionId);
+        const cardId = `q-${questionId}`;
+        const card = document.getElementById(cardId);
+        
+        let explanation = card.querySelector('.explanation-div');
+        if (explanation) explanation.remove();
+        
+        const answerSection = card.querySelector('.options');
+        if (question.explanation) {
+            const div = document.createElement('div');
+            div.className = 'alert alert-info mt-3 explanation-div';
+            
+            const status = data && data.is_correct ? 
+                '<span class="badge badge-success">✓ Correct!</span>' : 
+                '<span class="badge badge-danger">✗ Incorrect</span>';
+            
+            div.innerHTML = `
+                ${status}
+                <br><br>
+                <strong>💡 Explanation:</strong> ${question.explanation}
+            `;
+            answerSection.appendChild(div);
+        }
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            showQuestion(currentQuestionIndex);
+        }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            showQuestion(currentQuestionIndex);
+        }
+    });
+
+    document.getElementById('finishBtn').addEventListener('click', () => {
+        window.location.href = `{{ url_for('exam.practice_mode_result', result_id=result.id) }}`;
+    });
+
+    document.querySelectorAll('.option-input').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            submitAnswer(e.target.value);
+        });
+    });
+
+    showQuestion(0);
+    updateSummary();
+</script>
+
+<style>
+    .question-card { padding: 20px; }
+    .options { margin: 20px 0; }
+    .form-check-label { cursor: pointer; margin-left: 10px; }
+</style>
+{% endblock %}

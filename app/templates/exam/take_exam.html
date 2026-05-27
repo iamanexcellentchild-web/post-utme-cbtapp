@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} - UNILAG CBT{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/exam.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="exam-container">
+    <div class="exam-header">
+        <h2>{{ exam.title }}</h2>
+        <div class="exam-timer">
+            <span>Time Remaining: </span>
+            <span id="timer">{{ exam.duration_minutes }}:00</span>
+        </div>
+    </div>
+
+    <div class="exam-layout">
+        <div class="questions-panel">
+            <div class="question-navigator">
+                <h4>Questions</h4>
+                <div class="question-buttons">
+                    {% for question in questions %}
+                    <button class="question-btn" onclick="goToQuestion({{ question.id }})">
+                        Q{{ loop.index }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <form id="examForm" method="POST" action="{{ url_for('exam.submit_exam', exam_id=exam.id, result_id=result.id) }}">
+                {% for question in questions %}
+                <div class="question-box" id="q-{{ question.id }}" style="{% if loop.first %}display: block;{% else %}display: none;{% endif %}">
+                    <div class="question-header">
+                        <span class="question-number">Question {{ loop.index }} of {{ questions|length }}</span>
+                        <span class="question-marks">Marks: {{ question.marks }}</span>
+                    </div>
+
+                    <p class="question-text">{{ question.question_text }}</p>
+
+                    {% if question.question_type == 'multiple_choice' %}
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="A" onchange="saveAnswer({{ question.id }}, 'A')">
+                            <span>A) {{ question.option_a }}</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="B" onchange="saveAnswer({{ question.id }}, 'B')">
+                            <span>B) {{ question.option_b }}</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="C" onchange="saveAnswer({{ question.id }}, 'C')">
+                            <span>C) {{ question.option_c }}</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="D" onchange="saveAnswer({{ question.id }}, 'D')">
+                            <span>D) {{ question.option_d }}</span>
+                        </label>
+                    </div>
+                    {% elif question.question_type == 'true_false' %}
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="True" onchange="saveAnswer({{ question.id }}, 'True')">
+                            <span>True</span>
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="q{{ question.id }}" value="False" onchange="saveAnswer({{ question.id }}, 'False')">
+                            <span>False</span>
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    <div class="question-nav-buttons">
+                        {% if loop.index > 1 %}
+                        <button type="button" class="btn btn-secondary" onclick="goToQuestion({{ questions[loop.index0-1].id }})">Previous</button>
+                        {% endif %}
+                        {% if loop.index < questions|length %}
+                        <button type="button" class="btn btn-secondary" onclick="goToQuestion({{ questions[loop.index].id }})">Next</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to submit? You cannot change answers after submission.');">
+                        Submit Exam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const examDuration = {{ exam.duration_minutes }} * 60; // in seconds
+    const resultId = {{ result.id }};
+    const examId = {{ exam.id }};
+    let timeRemaining = examDuration;
+
+    function startTimer() {
+        const timerInterval = setInterval(() => {
+            timeRemaining--;
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('examForm').submit();
+            }
+        }, 1000);
+    }
+
+    function goToQuestion(questionId) {
+        const allQuestions = document.querySelectorAll('.question-box');
+        allQuestions.forEach(q => q.style.display = 'none');
+        document.getElementById(`q-${questionId}`).style.display = 'block';
+    }
+
+    function saveAnswer(questionId, answer) {
+        fetch(`{{ url_for('exam.submit_answer', exam_id=exam.id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                result_id: resultId,
+                question_id: questionId,
+                answer: answer
+            })
+        });
+    }
+
+    // Start timer on page load
+    window.addEventListener('load', startTimer);
+</script>
+{% endblock %}
