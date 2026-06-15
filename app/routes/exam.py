@@ -127,9 +127,13 @@ def exam_mode_start():
             all_questions.extend(random.sample(questions, min(5, len(questions))))
     if len(all_questions) >= 40:
         all_questions = random.sample(all_questions, 40)
+    if not all_questions:
+        return jsonify({'error': 'No questions available'}), 400
     exam = Exam.query.filter_by(title='Full Exam').first()
     if not exam:
-        exam = Exam.query.first()
+        exam = Exam.query.filter_by(subject='English').first()
+    if not exam:
+        return jsonify({'error': 'No exam found'}), 400
     result = Result(
         user_id=current_user.id,
         exam_id=exam.id if exam else 1,
