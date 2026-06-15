@@ -615,7 +615,7 @@ def seed_english():
 
     db.session.commit()
     print(f"✅ Seeded {len(all_english)} English questions.")
-    def seed_general_paper():
+def seed_general_paper():
     clear_subject('General Paper')
 
     topics = [
@@ -1040,7 +1040,7 @@ def seed_english():
 
     db.session.commit()
     print(f"✅ Seeded {len(all_gp)} General Paper questions.")
-    def seed_mathematics():
+def seed_mathematics():
     clear_subject('Mathematics')
 
     topics = [
@@ -1364,7 +1364,7 @@ def seed_english():
 
     db.session.commit()
     print(f"✅ Seeded {len(unique_math)} Mathematics questions.")
-    def seed_database():
+def seed_database():
     app = create_app()
     with app.app_context():
         print("Starting database seeding...")
