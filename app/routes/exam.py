@@ -1,3 +1,5 @@
+from unittest import result
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -158,7 +160,7 @@ def exam_mode_start():
             )
             db.session.add(placeholder)
     db.session.commit()
-    return redirect(url_for('exam.exam_mode_take', result_id=result.id))
+    return jsonify({'success': True, 'redirect': url_for('exam.exam_mode_take', result_id=result.id)})
 
 
 @exam_bp.route('/exam-mode/take/<int:result_id>')
