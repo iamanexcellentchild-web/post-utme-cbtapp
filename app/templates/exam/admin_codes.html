@@ -44,7 +44,7 @@
                 {% endwith %}
 
                 <form method="POST" action="{{ url_for('exam.admin_generate_codes') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
                     <div class="mb-3">
                         <label class="form-label">Number of codes to generate (max 50)</label>
                         <input type="number" name="count" class="form-control" min="1" max="50" value="1" required>

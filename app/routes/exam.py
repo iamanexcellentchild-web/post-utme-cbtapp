@@ -5,12 +5,14 @@ from app import db
 from app.models.exam import Exam, Question, Result, Answer, Topic, TournamentEntry
 from app.models.user import User
 from sqlalchemy import desc, func
+from flask_wtf.csrf import CSRFProtect
 import random
 import secrets
 import string
 
 exam_bp = Blueprint('exam', __name__)
-
+from app import csrf
+csrf.exempt(exam_bp)
 TOURNAMENT_BANK_NAME = "Atode Excellence Samuel"
 TOURNAMENT_BANK_ACCOUNT = "8141908356"
 TOURNAMENT_BANK = "OPay"
