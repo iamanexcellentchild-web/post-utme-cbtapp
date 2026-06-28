@@ -5,7 +5,8 @@ from app import db
 from app.models import User
 
 auth_bp = Blueprint('auth', __name__)
-
+from app import csrf
+csrf.exempt(auth_bp)
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
