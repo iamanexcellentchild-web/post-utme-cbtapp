@@ -32,4 +32,7 @@ def create_app():
         from app.models.exam import Exam, Question, Result, Answer, Topic, TournamentEntry
         db.create_all()
 
+        if Question.query.count() == 0:
+            from seed_db import seed_database
+            seed_database()
     return app
