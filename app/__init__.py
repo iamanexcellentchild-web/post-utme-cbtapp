@@ -1,9 +1,9 @@
 from flask import Flask
 from app.extensions import db, login_manager
-from flask_wtf.csrf import CSRFProtect  # ADD THIS
+from flask_wtf.csrf import CSRFProtect
 import os
 
-csrf = CSRFProtect()  # ADD THIS
+csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__)
@@ -13,7 +13,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
-    csrf.init_app(app)  # ADD THIS
+    csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -32,7 +32,4 @@ def create_app():
         from app.models.exam import Exam, Question, Result, Answer, Topic, TournamentEntry
         db.create_all()
 
-        if Question.query.count() == 0:
-            from seed_db import seed_database
-            seed_database()
     return app
