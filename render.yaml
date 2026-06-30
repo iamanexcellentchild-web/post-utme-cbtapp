@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: merit360-unilag
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python seed_db.py && gunicorn run:app
+    envVars:
+      - key: SECRET_KEY
+        value: merit360-unilag-cbt-excellence-2025-xk9pqz
+      - key: SQLALCHEMY_DATABASE_URI
+        value: sqlite:///cbt_app.db
+      - key: FLASK_ENV
+        value: production

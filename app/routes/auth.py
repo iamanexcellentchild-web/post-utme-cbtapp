@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.urls import url_parse
+from urllib.parse import urlsplit
 from app import db
 from app.models import User
 
@@ -63,7 +63,7 @@ def login():
         if user and user.check_password(password):
             login_user(user, remember=bool(remember_me))
             next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
+            if not next_page or urlsplit(next_page).netloc != '':
                 next_page = url_for('main.dashboard')
             return redirect(next_page)
         else:

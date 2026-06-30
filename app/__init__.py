@@ -1,6 +1,7 @@
 from flask import Flask
 from app.extensions import db, login_manager
 from flask_wtf.csrf import CSRFProtect
+from datetime import timedelta
 import os
 
 csrf = CSRFProtect()
@@ -11,6 +12,13 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'merit360-unilag-cbt-excellence-2025-xk9pqz')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///cbt_app.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Keep users logged in reliably across visits/restarts
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+    app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['REMEMBER_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 
     db.init_app(app)
     csrf.init_app(app)
